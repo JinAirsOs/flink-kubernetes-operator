@@ -19,18 +19,26 @@
 apiVersion: flink.apache.org/v1beta1
 kind: FlinkDeployment
 metadata:
-  name: basic-session-deployment-only-example
+  name: ado-flink-cluster
+  namespace: foundation
 spec:
   image: flink:1.15
   flinkVersion: v1_15
+  ingress:
+    template: "ado-flink.nioint.com/{{namespace}}/{{name}}(/|$)(.*)"
+    className: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+      nginx.ingress.kubernetes.io/configuration-snippet: |
+        if ($uri = "/default/advanced-ingress") {rewrite .* $1/default/advanced-ingress/ permanent;}
   flinkConfiguration:
     taskmanager.numberOfTaskSlots: "2"
   serviceAccount: flink
   jobManager:
     resource:
-      memory: "2048m"
-      cpu: 1
+      memory: 48gb
+      cpu: 12
   taskManager:
     resource:
-      memory: "2048m"
-      cpu: 1
+      memory: 48gb
+      cpu: 12

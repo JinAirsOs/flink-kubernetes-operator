@@ -1,28 +1,18 @@
-################################################################################
-#  Licensed to the Apache Software Foundation (ASF) under one
-#  or more contributor license agreements.  See the NOTICE file
-#  distributed with this work for additional information
-#  regarding copyright ownership.  The ASF licenses this file
-#  to you under the Apache License, Version 2.0 (the
-#  "License"); you may not use this file except in compliance
-#  with the License.  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-# limitations under the License.
-################################################################################
-
 apiVersion: flink.apache.org/v1beta1
 kind: FlinkDeployment
 metadata:
-  name: basic-example
+  name: top-speeding-window
+  namespace: foundation
 spec:
-  image: flink:1.15
-  flinkVersion: v1_15
+  image: flink:1.14
+  flinkVersion: v1_14
+  ingress:
+    template: "ado-flink-test-eu.nioint.com/{{namespace}}/{{name}}(/|$)(.*)"
+    className: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+      nginx.ingress.kubernetes.io/configuration-snippet: |
+        if ($uri = "/default/advanced-ingress") {rewrite .* $1/default/advanced-ingress/ permanent;}
   flinkConfiguration:
     taskmanager.numberOfTaskSlots: "2"
   serviceAccount: flink
@@ -35,6 +25,6 @@ spec:
       memory: "2048m"
       cpu: 1
   job:
-    jarURI: local:///opt/flink/examples/streaming/StateMachineExample.jar
-    parallelism: 2
+    jarURI: https://repo1.maven.org/maven2/org/apache/flink/flink-examples-streaming_2.12/1.15.0/flink-examples-streaming_2.12-1.15.0-TopSpeedWindowing.jar
+    parallelism: 4
     upgradeMode: stateless

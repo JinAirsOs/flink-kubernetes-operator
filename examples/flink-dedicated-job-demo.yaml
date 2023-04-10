@@ -1,0 +1,48 @@
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  #name需要改 成自己的名字
+  name: top-speeding-window
+  #namespace不能改
+  namespace: foundation
+spec:
+  #支持1.13,1.14,1.15，相应的flinkVersion为v1_13,v1_14,v1_15
+  image: flink:1.14
+  flinkVersion: v1_14
+  ingress:
+    #dns的前缀改为相应环境 这个是欧洲test环境的
+    #stg：ado-flink-stg-eu.nioint.com
+    #prod：ado-flink-eu.nioint.com
+    template: "ado-flink-test-eu.nioint.com/{{namespace}}/{{name}}(/|$)(.*)"
+    className: "ado-ingress"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+      nginx.ingress.kubernetes.io/configuration-snippet: |
+        if ($uri = "/default/advanced-ingress") {rewrite .* $1/default/advanced-ingress/ permanent;}
+  flinkConfiguration:
+    #卡槽为1 表示独占
+    taskmanager.numberOfTaskSlots: "1"
+  serviceAccount: flink
+  jobManager:
+    resource:
+      memory: 2gb
+      cpu: 1
+  taskManager:
+    resource:
+      memory: 2gb
+      cpu: 1
+---
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkSessionJob
+metadata:
+  name: top-speeding-windowing
+  namespace: foundation
+spec:
+  #名字改为和上面deployment一样
+  deploymentName: top-speeding-window
+  job:
+    # 1.14 版本 https://repo1.maven.org/maven2/org/apache/flink/flink-examples-streaming_2.12/1.14.6/flink-examples-streaming_2.12-1.14.6-TopSpeedWindowing.jar
+    # 1.15 版本 https://repo1.maven.org/maven2/org/apache/flink/flink-examples-streaming_2.12/1.15.0/flink-examples-streaming_2.12-1.15.0-TopSpeedWindowing.jar
+    jarURI: https://repo1.maven.org/maven2/org/apache/flink/flink-examples-streaming_2.12/1.14.6/flink-examples-streaming_2.12-1.14.6-TopSpeedWindowing.jar
+    parallelism: 4
+    upgradeMode: stateless

@@ -18,13 +18,7 @@
 package org.apache.flink.examples;
 
 import org.apache.flink.kubernetes.operator.crd.FlinkDeployment;
-import org.apache.flink.kubernetes.operator.crd.spec.FlinkDeploymentSpec;
-import org.apache.flink.kubernetes.operator.crd.spec.FlinkVersion;
-import org.apache.flink.kubernetes.operator.crd.spec.JobManagerSpec;
-import org.apache.flink.kubernetes.operator.crd.spec.JobSpec;
-import org.apache.flink.kubernetes.operator.crd.spec.Resource;
-import org.apache.flink.kubernetes.operator.crd.spec.TaskManagerSpec;
-import org.apache.flink.kubernetes.operator.crd.spec.UpgradeMode;
+import org.apache.flink.kubernetes.operator.crd.spec.*;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
@@ -43,12 +37,17 @@ public class Basic {
         flinkDeployment.setKind("FlinkDeployment");
         ObjectMeta objectMeta = new ObjectMeta();
         objectMeta.setName("basic");
+        objectMeta.setNamespace("foundation");
         flinkDeployment.setMetadata(objectMeta);
         FlinkDeploymentSpec flinkDeploymentSpec = new FlinkDeploymentSpec();
-        flinkDeploymentSpec.setFlinkVersion(FlinkVersion.v1_15);
-        flinkDeploymentSpec.setImage("flink:1.15");
+        flinkDeploymentSpec.setFlinkVersion(FlinkVersion.v1_14);
+        flinkDeploymentSpec.setImage("flink:1.14");
+        IngressSpec ingressSpec = new IngressSpec();
+        ingressSpec.setClassName("nginx");
+        ingressSpec.setTemplate("ado-flink.nioint.com/{{namespace}}/{{name}}(/|$)(.*)");
+        flinkDeploymentSpec.setIngress(ingressSpec);
         Map<String, String> flinkConfiguration =
-                Map.ofEntries(entry("taskmanager.numberOfTaskSlots", "2"));
+                Map.ofEntries(entry("taskmanager.numberOfTaskSlots", "1"));
         flinkDeploymentSpec.setFlinkConfiguration(flinkConfiguration);
         flinkDeployment.setSpec(flinkDeploymentSpec);
         flinkDeploymentSpec.setServiceAccount("flink");
@@ -75,5 +74,35 @@ public class Basic {
             // some error while connecting to kube cluster
             e.printStackTrace();
         }
+    }
+
+    public static FlinkDeployment createFlinkDeployment() {
+        FlinkDeployment flinkDeployment = new FlinkDeployment();
+        flinkDeployment.setApiVersion("flink.apache.org/v1beta1");
+        flinkDeployment.setKind("FlinkDeployment");
+        ObjectMeta objectMeta = new ObjectMeta();
+        objectMeta.setName("basic");
+        objectMeta.setNamespace("foundation");
+        flinkDeployment.setMetadata(objectMeta);
+        FlinkDeploymentSpec flinkDeploymentSpec = new FlinkDeploymentSpec();
+        flinkDeploymentSpec.setFlinkVersion(FlinkVersion.v1_14);
+        flinkDeploymentSpec.setImage("flink:1.14");
+        IngressSpec ingressSpec = new IngressSpec();
+        ingressSpec.setClassName("nginx");
+        ingressSpec.setTemplate("ado-flink.nioint.com/{{namespace}}/{{name}}(/|$)(.*)");
+        flinkDeploymentSpec.setIngress(ingressSpec);
+        Map<String, String> flinkConfiguration =
+                Map.ofEntries(entry("taskmanager.numberOfTaskSlots", "1"));
+        flinkDeploymentSpec.setFlinkConfiguration(flinkConfiguration);
+        flinkDeployment.setSpec(flinkDeploymentSpec);
+        flinkDeploymentSpec.setServiceAccount("flink");
+        JobManagerSpec jobManagerSpec = new JobManagerSpec();
+        jobManagerSpec.setResource(new Resource(1.0, "2048m"));
+        flinkDeploymentSpec.setJobManager(jobManagerSpec);
+        TaskManagerSpec taskManagerSpec = new TaskManagerSpec();
+        taskManagerSpec.setResource(new Resource(1.0, "2048m"));
+        flinkDeploymentSpec.setTaskManager(taskManagerSpec);
+
+        return flinkDeployment;
     }
 }

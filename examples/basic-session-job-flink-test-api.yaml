@@ -18,10 +18,10 @@
 apiVersion: flink.apache.org/v1beta1
 kind: FlinkSessionJob
 metadata:
-  name: top-speeding-windowing
+  name: flink-test-api-job
   namespace: foundation
 spec:
-  deploymentName: ado-flink-cluster-test-eu
+  deploymentName: flink-test-api
   job:
     jarURI: https://repo1.maven.org/maven2/org/apache/flink/flink-examples-streaming_2.12/1.15.0/flink-examples-streaming_2.12-1.15.0-TopSpeedWindowing.jar
     parallelism: 4

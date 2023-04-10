@@ -1,0 +1,51 @@
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  #name需要改 成自己的名字
+  name: eu-test-ao-monitor-log
+  #namespace不能改
+  namespace: foundation
+spec:
+   #支持1.13,1.14,1.15，相应的flinkVersion为v1_13,v1_14,v1_15
+  image: flink:1.14
+  flinkVersion: v1_14
+  ingress:
+     #dns的前缀改为相应环境 这个是欧洲test环境的
+     #stg：ado-flink-stg-eu.nioint.com
+     #prod：ado-flink-eu.nioint.com
+    template: "ado-flink-test-eu.nioint.com/{{namespace}}/{{name}}(/|$)(.*)"
+    className: "ado-ingress"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+      nginx.ingress.kubernetes.io/configuration-snippet: |
+        if ($uri = "/default/advanced-ingress") {rewrite .* $1/default/advanced-ingress/ permanent;}
+  flinkConfiguration:
+    #卡槽为1 表示独占
+    taskmanager.numberOfTaskSlots: "1"
+  serviceAccount: flink
+  jobManager:
+    resource:
+      memory: 4gb
+      cpu: 1
+  taskManager:
+    resource:
+      memory: 4gb
+      cpu: 1
+---
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkSessionJob
+metadata:
+  name: eu-test-ao-monitor-log
+  namespace: foundation
+spec:
+  #名字改为和上面deployment一样
+  deploymentName: eu-test-ao-monitor-log
+  job:
+    jarURI: https://ado-eu-public.s3.eu-central-1.amazonaws.com/flink/ado-ops-monitor-job-business-2.0.3-jar-with-dependencies.jar
+    parallelism: 2
+    upgradeMode: stateless
+    args: 
+      - -n
+      - LOG_DUMP_JOB
+      - -e
+      - eu-test
